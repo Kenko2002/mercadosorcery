@@ -1,0 +1,9 @@
+criar funcionalidades:
+    botar carta a venda
+    criar listas
+    calcular preco da lista
+    comprar carta
+    
+    configurar para vender a carta em posse:
+    -pelo menor preço do site
+    -pelo preço médio do site
