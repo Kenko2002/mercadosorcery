@@ -4,8 +4,13 @@
 set -e
 
 # The Vercel platform automatically runs `pip install -r requirements.txt`
-# so we don't need to do it here.
 
-# We just need to ensure the Django `collectstatic` command is run.
-# We run it from the root directory, pointing to the correct manage.py file.
+# Run collectstatic
+echo "--- Running collectstatic --- "
 python mysite/manage.py collectstatic --no-input
+
+# --- DIAGNOSTICS ---
+# List the contents of the staticfiles directory to the build log.
+# This will show us what `collectstatic` actually collected.
+echo "--- Contents of staticfiles directory after collectstatic --- "
+ls -R staticfiles
