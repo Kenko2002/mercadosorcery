@@ -1,25 +1,13 @@
 {
-  "hosting": {
-    "source": "frontend",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
-    "rewrites": [
-      {
-        "source": "**",
-        "apphosting": {
-          "backendId": "mercadosorcery",
-          "region": "us-central1"
-        }
-      }
-    ]
-  },
   "apphosting": {
+    "backendId": "myappmercadosorcery",
     "source": "mysite",
-    "region": "us-central1",
-    "project": "mercadosorcery",
-    "runtime": "custom"
+    "ignore": [
+      "node_modules",
+      ".git",
+      "firebase-debug.log",
+      "firebase-debug.*.log",
+      "functions"
+    ]
   }
 }
