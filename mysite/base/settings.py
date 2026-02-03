@@ -125,7 +125,8 @@ STATICFILES_DIRS = [
     os.path.join(os.path.dirname(drf_yasg.__file__), 'static'),
 ]
 
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Use a storage that doesn't crash the app if a manifest entry is missing.
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
