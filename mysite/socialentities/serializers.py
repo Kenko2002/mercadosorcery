@@ -36,9 +36,19 @@ class LoginSerializer(serializers.Serializer):
     def validate(self, attrs):
         email = attrs.get('email')
         password = attrs.get('password')
+        request = self.context.get("request")
+
+        # A chamada authenticate requer um objeto request, que não está disponível
+        # durante a geração do schema pelo drf-yasg. Pulamos a validação se o
+        # request não estiver no contexto.
+        if not request:
+            # Para a geração do schema, podemos retornar os atributos sem validação.
+            # Adicionamos 'user' como None para manter a consistência do retorno.
+            attrs['user'] = None
+            return attrs
 
         if email and password:
-            user = authenticate(request=self.context.get('request'), email=email, password=password)
+            user = authenticate(request=request, email=email, password=password)
 
             if not user:
                 msg = 'Não foi possível fazer login com as credenciais fornecidas.'
