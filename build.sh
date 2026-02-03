@@ -7,6 +7,5 @@ set -e
 # so we don't need to do it here.
 
 # We just need to ensure the Django `collectstatic` command is run.
-# We navigate into the `mysite` directory to run the command.
-cd mysite
-python manage.py collectstatic --no-input
+# We run it from the root directory, pointing to the correct manage.py file.
+python mysite/manage.py collectstatic --no-input
