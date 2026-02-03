@@ -3,12 +3,10 @@
 # Exit on error
 set -e
 
-# Upgrade pip and install dependencies
-pip install --upgrade pip
-pip install -r mysite/requirements.txt
+# The Vercel platform automatically runs `pip install -r requirements.txt`
+# so we don't need to do it here.
 
-# Navigate into the Django project directory
+# We just need to ensure the Django `collectstatic` command is run.
+# We navigate into the `mysite` directory to run the command.
 cd mysite
-
-# Collect static files
 python manage.py collectstatic --no-input
