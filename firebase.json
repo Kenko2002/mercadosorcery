@@ -19,6 +19,7 @@
   "apphosting": {
     "source": "mysite",
     "region": "us-central1",
-    "project": "mercadosorcery"
+    "project": "mercadosorcery",
+    "runtime": "custom"
   }
 }
