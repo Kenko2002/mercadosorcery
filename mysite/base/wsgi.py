@@ -11,8 +11,10 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mysite.base.settings')
+# POINTING TO THE SETTINGS FILE WITHIN THE 'base' DIRECTORY
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'base.settings')
 
 application = get_wsgi_application()
 
+# Vercel needs this to be called 'app'
 app = application
