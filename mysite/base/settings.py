@@ -1,6 +1,7 @@
 import os
 from datetime import timedelta
 from pathlib import Path
+import drf_yasg
 
 # BASE_DIR is the 'mysite' folder.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -113,14 +114,17 @@ USE_I18N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
+# --- Static files (CSS, JavaScript, Images) ---
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = 'static/'
-# This is the directory where 'collectstatic' will copy all static files for production.
-# It now points to a 'staticfiles' folder in the project root, one level above BASE_DIR (mysite).
 STATIC_ROOT = BASE_DIR.parent / "staticfiles"
-# Configuration for WhiteNoise to serve static files in production.
+
+# Explicitly tell Django to look for drf-yasg static files.
+STATICFILES_DIRS = [
+    os.path.join(os.path.dirname(drf_yasg.__file__), 'static'),
+]
+
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
