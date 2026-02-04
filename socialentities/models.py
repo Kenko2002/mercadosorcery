@@ -5,25 +5,23 @@ from .managers import SocialEntityManager
 
 class SocialEntity(AbstractUser):
     """
-    Modelo de usuário customizado. A restrição 'unique' do CPF foi removida
-    para permitir a criação em 2 etapas. A unicidade é garantida pelo formulário.
+    Modelo de usuário customizado.
+    Reintroduzindo o 'username' para estabilidade com o Django Admin, 
+    mas mantendo o email como o principal meio de login.
     """
-    class Role(models.TextChoices):
-        PACIENTE = 'PACIENTE', 'Paciente'
-        MEDICO = 'MEDICO', 'Medico'
-
-    username = None
+    # O username está de volta para compatibilidade.
+    # O AbstractUser já define o username, então só precisamos garantir
+    # que nossas configurações e managers o utilizem corretamente.
+    
+    # O email ainda é o campo de login e deve ser único.
     email = models.EmailField('endereço de email', unique=True)
-    USERNAME_FIELD = 'email'
     
-    REQUIRED_FIELDS = ['first_name', 'last_name', 'cpf', 'role']
-
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    
-    # unique=True foi REMOVIDO daqui para consertar o bug da criação de usuário.
-    cpf = models.CharField('CPF', max_length=11, null=True, blank=True)
-    imagem = models.ImageField(upload_to='imagens_perfil/', blank=True, null=True)
-    role = models.CharField('função', max_length=50, choices=Role.choices, null=True, blank=True)
+
+    # O email será usado para o login
+    USERNAME_FIELD = 'email'
+    # O username será um campo obrigatório no momento da criação (ex: createsuperuser)
+    REQUIRED_FIELDS = ['username']
 
     objects = SocialEntityManager()
 

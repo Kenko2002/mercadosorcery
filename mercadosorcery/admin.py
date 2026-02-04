@@ -1,92 +1,97 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from django.urls import reverse
-from .models import Carta, Colecao, Posse, Lista
+from django.conf import settings
+import os
+from .models import Usuario, Carta, Colecao, Posse, Lista
 
-# Classe Inline para o modelo Posse
+# --- Configuração do Perfil Inline (para Usuários) ---
+class UsuarioInline(admin.StackedInline):
+    model = Usuario
+    can_delete = False
+    verbose_name_plural = 'Perfil do Usuário'
+    fk_name = 'user'
+
+# --- Inlines para exibir cartas com imagens em Coleções e Listas ---
+
 class PosseInline(admin.TabularInline):
+    """
+    Exibe as posses de uma coleção com imagens, usando a configuração de arquivos estáticos.
+    """
     model = Posse
-    extra = 1  # Quantidade de formulários extras para adicionar
-    
-    # Campo para mostrar a prévia da imagem da carta
-    readonly_fields = ('image_preview',)
-    
-    # Lista de campos a serem exibidos no inline
-    fields = ('carta', 'image_preview', 'status', 'estado_carta', 'preco_usd')
-    
-    # Usar um widget de busca para o campo 'carta' para melhorar a performance
-    raw_id_fields = ('carta',)
+    extra = 0
+    readonly_fields = ('imagem_da_carta', 'detalhes_da_carta', 'estado_carta', 'status', 'preco_usd')
+    fields = ('imagem_da_carta', 'detalhes_da_carta', 'estado_carta', 'status', 'preco_usd')
 
-    def image_preview(self, obj):
-        # Verifica se a Posse tem uma Carta associada e se a Carta tem uma imagem
+    def detalhes_da_carta(self, obj):
+        return f"{obj.carta.nome} ({obj.carta.printing})"
+    detalhes_da_carta.short_description = 'Carta'
+
+    def imagem_da_carta(self, obj):
         if obj.carta and obj.carta.imagem:
-            # Gera a URL para a view que serve a imagem da carta
-            image_url = reverse('card_image', args=[obj.carta.id])
-            return format_html(f'<img src="{image_url}" width="60" height="84" />')
-        return "Sem imagem"
-    image_preview.short_description = "Prévia da Imagem"
+            nome_arquivo = os.path.basename(obj.carta.imagem)
+            url_imagem = f"{settings.STATIC_URL}{nome_arquivo}"
+            return format_html('<img src="{}" style="max-height: 100px; max-width: 100px;" />', url_imagem)
+        return "Sem Imagem"
+    imagem_da_carta.short_description = 'Imagem'
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+class CartasNaListaInline(admin.TabularInline):
+    """
+    Permite adicionar/remover posses de uma lista, exibindo a imagem via arquivos estáticos.
+    """
+    model = Lista.cartas.through
+    extra = 1
+    verbose_name = "Carta na Lista"
+    verbose_name_plural = "Cartas na Lista"
+    autocomplete_fields = ('posse',)
+    readonly_fields = ('imagem_da_carta',)
+    fields = ('posse', 'imagem_da_carta',)
+
+    def imagem_da_carta(self, obj):
+        if obj.posse and obj.posse.carta and obj.posse.carta.imagem:
+            nome_arquivo = os.path.basename(obj.posse.carta.imagem)
+            url_imagem = f"{settings.STATIC_URL}{nome_arquivo}"
+            return format_html('<img src="{}" style="max-height: 100px; max-width: 100px;" />', url_imagem)
+        return ""
+    imagem_da_carta.short_description = 'Imagem'
+
+
+# --- Registrando os modelos e aplicando os inlines ---
 
 @admin.register(Carta)
 class CartaAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'printing', 'raridade', 'tipo', 'display_image')
-    list_filter = ('printing', 'raridade', 'tipo')
-    search_fields = ('nome',)
+    list_display = ('imagem_da_carta', 'nome', 'printing', 'rarity', 'cmc')
+    search_fields = ('nome', 'printing')
+    list_filter = ('rarity', 'printing')
 
-    def display_image(self, obj):
+    def imagem_da_carta(self, obj):
         if obj.imagem:
-            image_url = reverse('card_image', args=[obj.id])
-            return format_html(f'<img src="{image_url}" width="60" height="84" />')
-        return "Sem imagem"
-    display_image.short_description = "Imagem"
+            nome_arquivo = os.path.basename(obj.imagem)
+            url_imagem = f"{settings.STATIC_URL}{nome_arquivo}"
+            return format_html('<img src="{}" style="max-height: 100px; max-width: 100px;" />', url_imagem)
+        return "Sem Imagem"
+    imagem_da_carta.short_description = 'Imagem'
 
 @admin.register(Colecao)
 class ColecaoAdmin(admin.ModelAdmin):
-    list_display = ('usuario',)
-    search_fields = ('usuario__first_name', 'usuario__last_name', 'usuario__email')
-    # Adiciona o inline de Posse na página de edição da Coleção
+    search_fields = ('usuario__email',)
     inlines = [PosseInline]
 
 @admin.register(Posse)
 class PosseAdmin(admin.ModelAdmin):
-    list_display = ('carta', 'colecao', 'status', 'estado_carta', 'preco_usd', 'image_preview')
-    list_filter = ('status', 'estado_carta', 'colecao__usuario')
-    search_fields = ('carta__nome', 'colecao__usuario__first_name', 'colecao__usuario__last_name')
-    raw_id_fields = ('carta',)
-
-    def image_preview(self, obj):
-        if obj.carta and obj.carta.imagem:
-            image_url = reverse('card_image', args=[obj.carta.id])
-            return format_html(f'<a href="{image_url}" target="_blank"><img src="{image_url}" width="60" height="84" /></a>')
-        return "Sem imagem"
-    image_preview.short_description = "Prévia da Imagem"
-
-
-# Ajuste para Lista, que tem um ManyToMany com Posse
-class ListaPosseInline(admin.TabularInline):
-    model = Lista.cartas.through # Acessa a tabela intermediária do ManyToMany
-    extra = 1
-    verbose_name = "Posse na Lista"
-    verbose_name_plural = "Posses na Lista"
-    
-    # Campos a serem exibidos
-    fields = ('posse', 'image_preview')
-    readonly_fields = ('image_preview',)
-    raw_id_fields = ('posse',)
-
-    def image_preview(self, obj):
-        # O obj aqui é a entrada da tabela intermediária
-        if obj.posse and obj.posse.carta and obj.posse.carta.imagem:
-            image_url = reverse('card_image', args=[obj.posse.carta.id])
-            return format_html(f'<img src="{image_url}" width="60" height="84" />')
-        return "Sem imagem"
-    image_preview.short_description = "Prévia da Imagem"
-
+    list_display = ('__str__', 'colecao', 'estado_carta', 'status')
+    search_fields = ('carta__nome', 'colecao__usuario__email')
+    list_filter = ('estado_carta', 'status')
 
 @admin.register(Lista)
 class ListaAdmin(admin.ModelAdmin):
     list_display = ('nome', 'usuario')
-    search_fields = ('nome', 'usuario__first_name', 'usuario__last_name')
-    # Exclui o campo 'cartas' padrão para evitar confusão com o inline
+    search_fields = ('nome', 'usuario__email')
+    inlines = [CartasNaListaInline]
     exclude = ('cartas',)
-    # Adiciona o inline customizado
-    inlines = [ListaPosseInline]

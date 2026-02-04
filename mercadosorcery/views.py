@@ -47,7 +47,7 @@ class PopulateCardsView(APIView):
     permission_classes = [IsAdminUser]
 
     @swagger_auto_schema(
-        operation_description="Aciona o script para popular o banco de dados com os dados das cartas do Scryfall.",
+        operation_description="Aciona o script para popular o banco de dados com os dados das cartas da api curiosa.io.",
         responses={200: "Comando executado com sucesso.", 500: "Ocorreu um erro ao executar o comando."}
     )
     def get(self, request):

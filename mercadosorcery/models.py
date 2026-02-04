@@ -1,72 +1,84 @@
 from django.db import models
 from django.conf import settings
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+# Obtém o modelo de usuário ativo, que é o nosso SocialEntity
+User = settings.AUTH_USER_MODEL
+
+# --- Modelo de Perfil (Sua arquitetura) ---
+
+class Usuario(models.Model):
+    class Role(models.TextChoices):
+        PACIENTE = 'PACIENTE', 'Paciente'
+        MEDICO = 'MEDICO', 'Medico'
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
+    cpf = models.CharField('CPF', max_length=11, unique=True, null=True, blank=True)
+    imagem = models.ImageField(upload_to='imagens_perfil/', blank=True, null=True)
+    role = models.CharField('função', max_length=50, choices=Role.choices, null=True, blank=True)
+
+    def __str__(self):
+        return self.user.email
+
+# --- Sinal para criação automática de perfil ---
+@receiver(post_save, sender=User)
+def create_or_update_user_profile(sender, instance, created, **kwargs):
+    if created:
+        Usuario.objects.create(user=instance)
+    # O `hasattr` previne um erro caso o perfil ainda não tenha sido criado em certas chamadas
+    if hasattr(instance, 'usuario'):
+        instance.usuario.save()
+
+# --- Modelos Originais (Restaurados) ---
 
 class Carta(models.Model):
-    class Printing(models.TextChoices):
-        ALPHA = "Alpha", "Alpha"
-        ALPHA_FOIL = "Alpha (foil)", "Alpha (foil)"
-        BETA = "Beta", "Beta"
-        BETA_FOIL = "Beta (foil)", "Beta (foil)"
-        ARTHURIAN_LEGENDS = "Arthurian_Legends", "Arthurian Legends"
-        ARTHURIAN_LEGENDS_FOIL = "Arthurian_Legends (foil)", "Arthurian Legends (foil)"
-        DRAGONLORDS = "Dragonlords", "Dragonlords"
-        DRAGONLORDS_FOIL = "Dragonlords (foil)", "Dragonlords (foil)"
-        GOTHIC = "Gothic", "Gothic"
-        GOTHIC_FOIL = "Gothic (foil)", "Gothic (foil)"
-        PROMOTIONAL = "Promotional", "Promotional"
-        PROMOTIONAL_FOIL = "Promotional (foil)", "Promotional (foil)"
-
     nome = models.CharField(max_length=255)
-    raridade = models.CharField(max_length=50)
-    tipo = models.CharField(max_length=50)
-    efeito = models.TextField()
-    poder = models.IntegerField(blank=True, null=True)
-    defesa = models.IntegerField(blank=True, null=True)
-    custo_mana = models.IntegerField(default=0)
-    treshold_agua = models.IntegerField(default=0)
-    treshold_vento = models.IntegerField(default=0)
-    treshold_fogo = models.IntegerField(default=0)
-    treshold_terra = models.IntegerField(default=0)
-    printing = models.CharField(max_length=100, choices=Printing.choices)
+    printing = models.CharField(max_length=10)
     imagem = models.CharField(max_length=512, blank=True, null=True)
+    mana_cost = models.CharField(max_length=50, blank=True)
+    cmc = models.FloatField(default=0.0)
+    type_line = models.CharField(max_length=255, blank=True)
+    oracle_text = models.TextField(blank=True)
+    power = models.CharField(max_length=10, blank=True)
+    toughness = models.CharField(max_length=10, blank=True)
+    rarity = models.CharField(max_length=50, blank=True)
 
     def __str__(self):
         return f"{self.nome} ({self.printing})"
 
 class Colecao(models.Model):
-    usuario = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    cartas = models.ManyToManyField(Carta, through='Posse')
+    usuario = models.OneToOneField(User, on_delete=models.CASCADE)
 
     def __str__(self):
-        return f"Coleção de {self.usuario.first_name} {self.usuario.last_name}"
+        return f"Coleção de {self.usuario.email}"
 
 class Posse(models.Model):
-    class Status(models.TextChoices):
-        VENDENDO_PELO_PRECO_MEDIO = 'VENDENDO_PELO_PRECO_MEDIO', 'Vendendo_Pelo_Preco_Medio'
-        VENDENDO_PELO_MENOR_PRECO = 'VENDENDO_PELO_MENOR_PRECO', 'Vendendo_Pelo_Menor_Preco'
-        VENDENDO_PELO_PRECO_DEFINIDO = 'VENDENDO_PELO_PRECO_DEFINIDO', 'Vendendo_Pelo_Preco_Definido'
-        FORA_DE_VENDA = 'FORA_DE_VENDA', 'Fora_De_Venda'
-
     class EstadoCarta(models.TextChoices):
-        NEAR_MINT = 'NM', 'NearMint'
-        SLIGHTLY_PLAYED = 'SP', 'Slightly Played'
-        MODERATELY_PLAYED = 'MP', 'Moderatedly Played'
-        HIGHLY_PLAYED = 'HP', 'Highly Played'
-        DAMAGED = 'D', 'Damaged'
+        NEAR_MINT = 'NM', 'Near Mint'
+        LIGHTLY_PLAYED = 'LP', 'Lightly Played'
+        MODERATELY_PLAYED = 'MP', 'Moderately Played'
+        HEAVILY_PLAYED = 'HP', 'Heavily Played'
+        DAMAGED = 'DM', 'Damaged'
+
+    class Status(models.TextChoices):
+        FORA_DE_VENDA = 'NOT_FOR_SALE', 'Fora de Venda'
+        A_VENDA = 'FOR_SALE', 'À Venda'
+        TROCANDO = 'TRADING', 'Trocando'
 
     carta = models.ForeignKey(Carta, on_delete=models.CASCADE)
     colecao = models.ForeignKey(Colecao, on_delete=models.CASCADE)
-    status = models.CharField(max_length=50, choices=Status.choices, default=Status.FORA_DE_VENDA)
-    estado_carta = models.CharField(max_length=50, choices=EstadoCarta.choices, default=EstadoCarta.NEAR_MINT)
+    estado_carta = models.CharField(max_length=2, choices=EstadoCarta.choices)
+    status = models.CharField(max_length=20, choices=Status.choices)
     preco_usd = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
     def __str__(self):
-        return f"{self.carta.nome} na coleção de {self.colecao.usuario.first_name} {self.colecao.usuario.last_name}"
+        return f"Cópia de {self.carta.nome}"
 
 class Lista(models.Model):
-    nome = models.CharField(max_length=255)
-    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    cartas = models.ManyToManyField(Posse)
+    nome = models.CharField(max_length=100)
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE)
+    cartas = models.ManyToManyField(Posse) # Baseado no seu serializer
 
     def __str__(self):
-        return self.nome
+        return f"Lista '{self.nome}' de {self.usuario.email}"
