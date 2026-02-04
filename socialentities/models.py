@@ -1,29 +1,30 @@
 import uuid
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from .managers import SocialEntityManager # Importa o novo gerenciador
+from .managers import SocialEntityManager
 
 class SocialEntity(AbstractUser):
     """
-    Modelo de usuário customizado que representa todos os usuários do sistema.
+    Modelo de usuário customizado. A restrição 'unique' do CPF foi removida
+    para permitir a criação em 2 etapas. A unicidade é garantida pelo formulário.
     """
     class Role(models.TextChoices):
         PACIENTE = 'PACIENTE', 'Paciente'
         MEDICO = 'MEDICO', 'Medico'
 
-    # Remove o username e define o email como o campo de login
     username = None
     email = models.EmailField('endereço de email', unique=True)
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['first_name', 'last_name']
+    
+    REQUIRED_FIELDS = ['first_name', 'last_name', 'cpf', 'role']
 
-    # Campos customizados
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    cpf = models.CharField('CPF', max_length=11, unique=True)
+    
+    # unique=True foi REMOVIDO daqui para consertar o bug da criação de usuário.
+    cpf = models.CharField('CPF', max_length=11, null=True, blank=True)
     imagem = models.ImageField(upload_to='imagens_perfil/', blank=True, null=True)
-    role = models.CharField('função', max_length=50, choices=Role.choices)
+    role = models.CharField('função', max_length=50, choices=Role.choices, null=True, blank=True)
 
-    # Conecta o gerenciador customizado ao modelo
     objects = SocialEntityManager()
 
     def __str__(self):
