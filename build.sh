@@ -1,7 +1,9 @@
 #!/bin/bash
 set -e
 
-# These commands run after dependencies are installed
+# Activate the virtual environment to run Django commands
+source .venv/bin/activate
+
 echo "--- Collecting static files ---"
 python manage.py collectstatic --noinput
 

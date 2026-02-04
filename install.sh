@@ -1,10 +1,14 @@
 #!/bin/bash
 set -e
 
-# Install system dependencies for psycopg2
-echo "--- Installing system dependencies ---"
-apt-get update && apt-get install -y postgresql-client libpq-dev
+# Install system dependencies for psycopg2 using yum
+echo "--- Installing system dependencies with yum ---"
+yum install -y postgresql-devel
 
-# Install Python dependencies
+# Create a virtual environment
+echo "--- Creating Python virtual environment ---"
+python3 -m venv .venv
+
+# Install Python dependencies into the virtual environment
 echo "--- Installing Python dependencies ---"
-pip install -r requirements.txt
+.venv/bin/pip install -r requirements.txt
