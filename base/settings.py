@@ -1,4 +1,5 @@
 import os
+import dj_database_url
 from datetime import timedelta
 from pathlib import Path
 import drf_yasg
@@ -99,12 +100,24 @@ TEMPLATES = [
     },
 ]
 
+# --- Database ---
+# https://docs.djangoproject.com/en/5.0/ref/settings/#databases
+#
+# Use SQLite for local development
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# If a DATABASE_URL environment variable is set (e.g., on Vercel),
+# use it to configure the production database.
+if 'DATABASE_URL' in os.environ:
+    DATABASES['default'] = dj_database_url.config(
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
 
 
 AUTH_PASSWORD_VALIDATORS = [
