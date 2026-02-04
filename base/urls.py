@@ -4,6 +4,8 @@ from rest_framework import permissions, routers
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from drf_yasg.generators import OpenAPISchemaGenerator
+from django.conf import settings
+from django.conf.urls.static import static
 
 # Importando as views diretamente
 from mercadosorcery import views as mercadosorcery_views
@@ -50,10 +52,14 @@ urlpatterns = [
     re_path(r'^swagger/?$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     re_path(r'^redoc/?$', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 
+    # Rota especial para servir imagens no admin
+    path('card-image/<int:card_id>/', mercadosorcery_views.card_image_view, name='card_image'),
+
     # --- ROTAS DA API ---
 
     # Rotas personalizadas
     path('api/populate-cards/', mercadosorcery_views.PopulateCardsView.as_view(), name='populate-cards'),
+    path('api/associate-images/', mercadosorcery_views.AssociateImagesView.as_view(), name='associate-images'),
     path('api/posses/adicionar/', mercadosorcery_views.AdicionarPosseView.as_view(), name='adicionar-posse'),
     path('api/colecoes/minha-colecao/', mercadosorcery_views.MinhaColecaoView.as_view(), name='minha-colecao'),
 
@@ -64,3 +70,6 @@ urlpatterns = [
     # Rotas do DRF Router (deve ser a última rota da API)
     path('api/', include(router.urls)),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

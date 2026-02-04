@@ -7,3 +7,7 @@ criar funcionalidades:
     configurar para vender a carta em posse:
     -pelo menor preço do site
     -pelo preço médio do site
+
+
+voltar os endpoints do mercadosorcery de base.urls para mercadosorcery.urls
+voltar com a abordagem de installed apps

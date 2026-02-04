@@ -1,0 +1,12 @@
+
+django
+dj-database-url
+psycopg2-binary
+whitenoise
+gunicorn
+djangorestframework
+drf-yasg
+djangorestframework-simplejwt
+django-cors-headers
+thefuzz
+python-Levenshtein

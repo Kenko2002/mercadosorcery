@@ -1,3 +1,4 @@
+
 from collections import defaultdict
 from django.db.models import Count
 from rest_framework import viewsets, status
@@ -8,6 +9,8 @@ from rest_framework.pagination import PageNumberPagination
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.core.management import call_command
+from django.http import HttpResponse, Http404
+import os
 
 from .models import Carta, Colecao, Posse, Lista
 from .serializers import (
@@ -15,6 +18,26 @@ from .serializers import (
     CriarPosseSerializer, MinhaColecaoSerializer
 )
 
+# --- Special Views ---
+
+def card_image_view(request, card_id):
+    """
+    Uma view para servir a imagem de uma carta a partir de seu caminho de arquivo absoluto.
+    Isso é usado para exibir imagens no Django Admin, pois o navegador não pode
+    acessar diretamente o sistema de arquivos do servidor.
+    """
+    try:
+        carta = Carta.objects.get(id=card_id)
+        if carta.imagem and os.path.exists(carta.imagem):
+            with open(carta.imagem, 'rb') as f:
+                return HttpResponse(f.read(), content_type="image/png")
+    except Carta.DoesNotExist:
+        pass
+    # Retorna uma resposta 404 se a carta não for encontrada ou a imagem não existir.
+    raise Http404("Imagem não encontrada.")
+
+
+# --- API Endpoints ---
 
 class PopulateCardsView(APIView):
     """
@@ -29,9 +52,27 @@ class PopulateCardsView(APIView):
     )
     def get(self, request):
         try:
-            # Chama o comando de gerenciamento
             call_command('populate_cards')
             return Response({"status": "O comando para popular o banco de dados foi executado com sucesso."}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": f"Ocorreu um erro ao executar o comando: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class AssociateImagesView(APIView):
+    """
+    Um endpoint para acionar o comando de associar as imagens às cartas.
+    Acesso restrito a administradores.
+    """
+    permission_classes = [IsAdminUser]
+
+    @swagger_auto_schema(
+        operation_description="Aciona o script para associar as imagens da pasta 'imagens_comprimidas' às respectivas cartas no banco de dados.",
+        responses={200: "Comando executado com sucesso.", 500: "Ocorreu um erro ao executar o comando."}
+    )
+    def get(self, request):
+        try:
+            call_command('associate_images')
+            return Response({"status": "O comando para associar imagens foi executado com sucesso."}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": f"Ocorreu um erro ao executar o comando: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -107,7 +148,7 @@ class MinhaColecaoView(APIView):
             printings = [p.strip().upper() for p in printings_param.split(',')]
             queryset = queryset.filter(carta__printing__in=printings)
 
-        # Agrupamento manual em Python para evitar dependência do ArrayAgg do Postgres
+        # Agrupamento manual em Python
         grouped_possessions = defaultdict(lambda: {'posse_ids': [], 'quantidade': 0})
         ordered_queryset = queryset.order_by('carta_id', 'estado_carta', 'status', 'preco_usd')
 
@@ -137,6 +178,8 @@ class MinhaColecaoView(APIView):
         
         return paginator.get_paginated_response(serializer.data)
 
+
+# --- DRF ViewSets ---
 
 class CartaViewSet(viewsets.ModelViewSet):
     queryset = Carta.objects.all()
