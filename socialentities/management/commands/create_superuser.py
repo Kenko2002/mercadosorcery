@@ -8,19 +8,19 @@ class Command(BaseCommand):
     help = "Creates a superuser from environment variables non-interactively"
 
     def handle(self, *args, **options):
-        username = os.environ.get('DJANGO_SUPERUSER_USERNAME')
         email = os.environ.get('DJANGO_SUPERUSER_EMAIL')
         password = os.environ.get('DJANGO_SUPERUSER_PASSWORD')
 
-        if not all([username, email, password]):
+        if not all([email, password]):
             self.stdout.write(self.style.ERROR(
-                'Missing environment variables: DJANGO_SUPERUSER_USERNAME, ' \
-                'DJANGO_SUPERUSER_EMAIL, DJANGO_SUPERUSER_PASSWORD'
+                'Missing environment variables: DJANGO_SUPERUSER_EMAIL, DJANGO_SUPERUSER_PASSWORD'
             ))
             return
 
-        if User.objects.filter(username=username).exists():
-            self.stdout.write(self.style.SUCCESS(f'Superuser "{username}" already exists.'))
+        if User.objects.filter(email=email).exists():
+            self.stdout.write(self.style.SUCCESS(f'Superuser with email \"{email}\" already exists.'))
         else:
-            User.objects.create_superuser(username=username, email=email, password=password)
-            self.stdout.write(self.style.SUCCESS(f'Successfully created superuser "{username}".'))
+            # When using a custom user model with email as USERNAME_FIELD,
+            # create_superuser expects the email to be passed as the username.
+            User.objects.create_superuser(email=email, password=password)
+            self.stdout.write(self.style.SUCCESS(f'Successfully created superuser \"{email}\".'))
