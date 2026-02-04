@@ -7,7 +7,7 @@ source .venv/bin/activate
 echo "--- Applying database migrations ---"
 python manage.py migrate
 
-echo "--- Populating database with card image links ---"
+echo "--- Populating database with card data ---"
 python manage.py populate_links
 
 echo "--- Collecting static files ---"
