@@ -13,7 +13,3 @@ python manage.py migrate
 
 echo "--- Creating superuser ---"
 python manage.py create_superuser
-
-echo "--- Renaming staticfiles to public ---"
-# Vercel expects the output directory to be named 'public' by default.
-mv staticfiles public

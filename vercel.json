@@ -5,18 +5,19 @@
       "use": "@vercel/python",
       "config": {
         "maxLambdaSize": "15mb",
-        "runtime": "python3.12"
+        "runtime": "python3.12",
+        "build": "./build.sh"
       }
     },
     {
-      "src": "public/**",
+      "src": "staticfiles/**",
       "use": "@vercel/static"
     }
   ],
   "routes": [
     {
       "src": "/static/(.*)",
-      "dest": "/public/$1"
+      "dest": "/staticfiles/$1"
     },
     {
       "src": "/(.*)",
