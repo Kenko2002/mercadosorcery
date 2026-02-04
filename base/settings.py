@@ -16,23 +16,38 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-^=6-_k)oh!n9-fpcd1qd0
 # Default to False if DEBUG is not set. Vercel will not set this, so it will be False in production.
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-# --- ALLOWED_HOSTS Configuration ---
+# --- ALLOWED_HOSTS & CSRF Configuration ---
 # This is crucial for production (when DEBUG=False).
 ALLOWED_HOSTS = [
     '127.0.0.1',
     'localhost',
     # Allow all cloud workstation hosts
     '.cloudworkstations.dev',
+    # Allow all App Hosting preview hosts
+    '.apphosting.dev',
 ]
 
-# Add Vercel deployment URL to ALLOWED_HOSTS
+CSRF_TRUSTED_ORIGINS = [
+    f"https://{os.environ.get('WEB_HOST')}" if os.environ.get('WEB_HOST') else "",
+    'https://*.cloudworkstations.dev',
+    'https://*.apphosting.dev',
+]
+
+# Add Vercel deployment URLs
 VERCEL_URL = os.environ.get('VERCEL_URL')
 if VERCEL_URL:
-    # Vercel provides the URL with the protocol, but ALLOWED_HOSTS needs just the hostname.
-    # Example: https://my-app-swart.vercel.app -> my-app-swart.vercel.app
-    host = VERCEL_URL.split('//')[1]
-    if host not in ALLOWED_HOSTS:
-        ALLOWED_HOSTS.append(host)
+    ALLOWED_HOSTS.append(VERCEL_URL)
+    # The production URL also needs to be a trusted origin for CSRF
+    CSRF_TRUSTED_ORIGINS.append(f"https://{VERCEL_URL}")
+
+VERCEL_BRANCH_URL = os.environ.get('VERCEL_BRANCH_URL')
+if VERCEL_BRANCH_URL:
+    ALLOWED_HOSTS.append(VERCEL_BRANCH_URL)
+    # The preview branch URL also needs to be a trusted origin for CSRF
+    CSRF_TRUSTED_ORIGINS.append(f"https://{VERCEL_BRANCH_URL}")
+
+# Clean up any empty values that might have occurred in CSRF_TRUSTED_ORIGINS
+CSRF_TRUSTED_ORIGINS = [origin for origin in CSRF_TRUSTED_ORIGINS if origin]
 
 
 # Application definition
