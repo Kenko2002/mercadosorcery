@@ -6,7 +6,7 @@ from thefuzz import fuzz
 from mercadosorcery.models import Carta
 
 class Command(BaseCommand):
-    help = 'Associa imagens às cartas (versões normais e foil) e usa busca por similaridade.'
+    help = 'Associa imagens às cartas, usando imagens de Beta para as cartas de Alpha.'
 
     def handle(self, *args, **options):
         image_folder_path = '/home/user/exemploflutterflow/imagens_comprimidas'
@@ -23,9 +23,10 @@ class Command(BaseCommand):
         all_image_files = os.listdir(image_folder_path)
         self.stdout.write(f'{len(all_image_files)} imagens encontradas para processar.')
 
+        # O mapeamento agora trata 'bet' como a fonte para as edições Alpha e Beta.
         printing_map = {
-            'alp': ('Alpha', 'Alpha (foil)'),
-            'bet': ('Beta', 'Beta (foil)'),
+            'alp': ('Alpha', 'Alpha (foil)'), # Mantido para os avatares restantes
+            'bet': ('Alpha', 'Alpha (foil)', 'Beta', 'Beta (foil)'),
             'art': ('Arthurian_Legends', 'Arthurian_Legends (foil)'),
             'dra': ('Dragonlords', 'Dragonlords (foil)'),
             'got': ('Gothic', 'Gothic (foil)'),
@@ -54,7 +55,7 @@ class Command(BaseCommand):
                 target_card_name = exact_match_q.first().nome
                 self.stdout.write(self.style.SUCCESS(f'[Exato] Nome base encontrado: "{target_card_name}" para o arquivo {image_name}'))
             else:
-                # 2. Se falhar, busca por similaridade (compatível com todos os bancos de dados).
+                # 2. Se falhar, busca por similaridade.
                 unique_card_names_qs = Carta.objects.filter(printing__in=possible_printings).values_list('nome', flat=True).distinct()
                 
                 highest_score = 0
@@ -72,7 +73,7 @@ class Command(BaseCommand):
                         f'[Similaridade] Nome base encontrado: "{target_card_name}" para o arquivo {image_name} (Score: {highest_score}%)'
                     ))
 
-            # 3. Se um nome de carta foi encontrado, atualiza todas as suas versões (normal e foil).
+            # 3. Se um nome de carta foi encontrado, atualiza todas as suas versões.
             if target_card_name:
                 absolute_image_path = os.path.join(image_folder_path, image_name)
                 updated_count = Carta.objects.filter(
