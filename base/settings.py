@@ -12,8 +12,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-^=6-_k)oh!n9-fpcd1qd0rf(!8y2!!8cc*so1if(!*ydv@*_dc')
 
-# DEBUG is True if the environment variable DEBUG is 'True', otherwise False.
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+# SECURITY WARNING: don't run with debug turned on in production!
+# Default to False if DEBUG is not set. Vercel will not set this, so it will be False in production.
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 # --- ALLOWED_HOSTS Configuration ---
 # This is crucial for production (when DEBUG=False).
@@ -24,23 +25,12 @@ ALLOWED_HOSTS = [
     '.cloudworkstations.dev',
 ]
 
-# Add Vercel URL if in production environment.
+# Add Vercel deployment URL to ALLOWED_HOSTS
 VERCEL_URL = os.environ.get('VERCEL_URL')
 if VERCEL_URL:
-    ALLOWED_HOSTS.append(VERCEL_URL)
-
-# Add development environment URLs (Cloud Workstations)
-CSRF_TRUSTED_ORIGINS = [
-    f"https://{os.environ.get('WEB_HOST')}" if os.environ.get('WEB_HOST') else "",
-    'https://*.cloudworkstations.dev',
-    'https://*.apphosting.dev',
-]
-# Clean up any empty values that might have occurred
-CSRF_TRUSTED_ORIGINS = [origin for origin in CSRF_TRUSTED_ORIGINS if origin]
-# Add CSRF hosts to ALLOWED_HOSTS for simplicity
-for origin in CSRF_TRUSTED_ORIGINS:
-    # Extract hostname from URL (e.g., https://my-site.com -> my-site.com)
-    host = origin.split('//')[1].split(':')[0]
+    # Vercel provides the URL with the protocol, but ALLOWED_HOSTS needs just the hostname.
+    # Example: https://my-app-swart.vercel.app -> my-app-swart.vercel.app
+    host = VERCEL_URL.split('//')[1]
     if host not in ALLOWED_HOSTS:
         ALLOWED_HOSTS.append(host)
 
