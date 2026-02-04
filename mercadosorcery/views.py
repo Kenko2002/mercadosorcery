@@ -30,7 +30,7 @@ class PopulateCardsView(APIView):
     def get(self, request):
         try:
             # Chama o comando de gerenciamento
-            call_command('populate_links')
+            call_command('populate_cards')
             return Response({"status": "O comando para popular o banco de dados foi executado com sucesso."}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": f"Ocorreu um erro ao executar o comando: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
