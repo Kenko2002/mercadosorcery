@@ -2,30 +2,33 @@
 import os
 import re
 from django.core.management.base import BaseCommand
-from thefuzz import fuzz
+from django.conf import settings
 from mercadosorcery.models import Carta
 
+def normalize_name(name):
+    """Converts to lowercase and removes all non-alphanumeric characters."""
+    if not name:
+        return ""
+    return re.sub(r'[^a-z0-9]', '', name.lower())
+
 class Command(BaseCommand):
-    help = 'Associa imagens às cartas, usando imagens de Beta para as cartas de Alpha.'
+    help = 'Associa imagens de arquivos a cartas no banco de dados sem usar dependências externas de fuzzy matching.'
 
     def handle(self, *args, **options):
-        image_folder_path = '/home/user/exemploflutterflow/imagens_comprimidas'
-        SIMILARITY_THRESHOLD = 70
-
+        image_folder_path = os.path.join(settings.BASE_DIR, 'imagens_comprimidas')
+        
         if not os.path.isdir(image_folder_path):
-            self.stdout.write(self.style.ERROR(f'Diretório não encontrado: {image_folder_path}'))
+            self.stdout.write(self.style.ERROR(f'Diretório de imagens não encontrado: {image_folder_path}'))
             return
 
         self.stdout.write('Limpando associações de imagens existentes...')
         Carta.objects.all().update(imagem=None)
-        self.stdout.write(self.style.SUCCESS('Associações limpas.'))
+        self.stdout.write(self.style.SUCCESS('Associações de imagens anteriores foram limpas.'))
 
         all_image_files = os.listdir(image_folder_path)
         self.stdout.write(f'{len(all_image_files)} imagens encontradas para processar.')
 
-        # O mapeamento agora trata 'bet' como a fonte para as edições Alpha e Beta.
         printing_map = {
-            'alp': ('Alpha', 'Alpha (foil)'), # Mantido para os avatares restantes
             'bet': ('Alpha', 'Alpha (foil)', 'Beta', 'Beta (foil)'),
             'art': ('Arthurian_Legends', 'Arthurian_Legends (foil)'),
             'dra': ('Dragonlords', 'Dragonlords (foil)'),
@@ -33,57 +36,64 @@ class Command(BaseCommand):
             'pro': ('Promotional', 'Promotional (foil)'),
         }
 
+        # Cache all relevant cards from the database, normalized
+        # This avoids querying the DB inside the loop
+        cards_by_printing = {}
+        all_printings = [p for sublist in printing_map.values() for p in sublist]
+        all_cards = Carta.objects.filter(printing__in=all_printings)
+        
+        normalized_card_map = {}
+        for card in all_cards:
+            normalized_name = normalize_name(card.nome)
+            if normalized_name not in normalized_card_map:
+                normalized_card_map[normalized_name] = []
+            normalized_card_map[normalized_name].append(card)
+
+        self.stdout.write(f"Mapeamento de {len(normalized_card_map)} nomes de cartas normalizados criado.")
+
+        # Process each image file
         for image_name in all_image_files:
-            match = re.match(r"^([a-z]{3})-([a-zA-Z0-9_]+)((?:-[a-z0-9_]+)*)\.png$", image_name)
+            match = re.match(r"^[a-z]{3}-([a-zA-Z0-9_]+)((?:-[a-z0-9_]+)*)\.png$", image_name)
             if not match:
-                self.stdout.write(self.style.WARNING(f'Formato de arquivo inesperado, ignorando: {image_name}'))
+                self.stdout.write(self.style.WARNING(f'Ignorando arquivo com formato inesperado: {image_name}'))
                 continue
 
             printing_code, card_name_part, _ = match.groups()
-            card_name_from_file = card_name_part.replace('_', ' ').title()
             possible_printings = printing_map.get(printing_code)
 
             if not possible_printings:
-                self.stdout.write(self.style.WARNING(f'Prefixo de edição não mapeado: {printing_code}'))
+                self.stdout.write(self.style.WARNING(f'Prefixo de edição não mapeado ignorado: {printing_code} no arquivo {image_name}'))
                 continue
 
-            target_card_name = None
+            normalized_name_from_file = normalize_name(card_name_part)
+            
+            # Find a match in our pre-built map
+            matched_cards = normalized_card_map.get(normalized_name_from_file)
 
-            # 1. Tenta correspondência exata.
-            exact_match_q = Carta.objects.filter(nome__iexact=card_name_from_file, printing__in=possible_printings)
-            if exact_match_q.exists():
-                target_card_name = exact_match_q.first().nome
-                self.stdout.write(self.style.SUCCESS(f'[Exato] Nome base encontrado: "{target_card_name}" para o arquivo {image_name}'))
-            else:
-                # 2. Se falhar, busca por similaridade.
-                unique_card_names_qs = Carta.objects.filter(printing__in=possible_printings).values_list('nome', flat=True).distinct()
+            if matched_cards:
+                # We found a match. Get the canonical name from the first matched card.
+                canonical_name = matched_cards[0].nome
                 
-                highest_score = 0
-                best_match_name = ""
-
-                for db_card_name in unique_card_names_qs:
-                    score = fuzz.ratio(card_name_from_file.lower(), db_card_name.lower())
-                    if score > highest_score:
-                        highest_score = score
-                        best_match_name = db_card_name
-
-                if highest_score >= SIMILARITY_THRESHOLD:
-                    target_card_name = best_match_name
-                    self.stdout.write(self.style.SUCCESS(
-                        f'[Similaridade] Nome base encontrado: "{target_card_name}" para o arquivo {image_name} (Score: {highest_score}%)'
-                    ))
-
-            # 3. Se um nome de carta foi encontrado, atualiza todas as suas versões.
-            if target_card_name:
+                # Find all versions of this card that should be updated
+                # (i.e., those that share the same canonical name and are in the correct printings)
                 absolute_image_path = os.path.join(image_folder_path, image_name)
                 updated_count = Carta.objects.filter(
-                    nome__iexact=target_card_name,
+                    nome=canonical_name,
                     printing__in=possible_printings
                 ).update(imagem=absolute_image_path)
 
                 if updated_count > 0:
-                    self.stdout.write(f'--> Imagem associada a {updated_count} versão(ões) de "{target_card_name}".\n')
+                    self.stdout.write(self.style.SUCCESS(
+                        f'[OK] Imagem "{image_name}" associada a {updated_count} versão(ões) de "{canonical_name}".'
+                    ))
+                else:
+                    # This case should be rare, but good to log
+                    self.stdout.write(self.style.NOTICE(
+                        f'[AVISO] Uma correspondência foi encontrada para "{image_name}", mas nenhuma carta foi atualizada.'
+                    ))
             else:
-                self.stdout.write(self.style.WARNING(f'Nenhuma correspondência encontrada para o arquivo {image_name} (Busca: "{card_name_from_file}")\n'))
+                self.stdout.write(self.style.WARNING(
+                    f'[FALHA] Nenhuma correspondência no banco de dados para a imagem "{image_name}" (Nome normalizado: {normalized_name_from_file})'
+                ))
 
-        self.stdout.write(self.style.SUCCESS('Processo de associação concluído.'))
+        self.stdout.write(self.style.SUCCESS('Processo de associação de imagens concluído.'))
