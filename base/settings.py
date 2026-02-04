@@ -13,13 +13,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-^=6-_k)oh!n9-fpcd1qd0rf(!8y2!!8cc*so1if(!*ydv@*_dc')
 
 # DEBUG is True if the environment variable DEBUG is 'True', otherwise False.
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 # --- ALLOWED_HOSTS Configuration ---
 # This is crucial for production (when DEBUG=False).
 ALLOWED_HOSTS = [
     '127.0.0.1',
     'localhost',
+    # Allow all cloud workstation hosts
+    '.cloudworkstations.dev',
 ]
 
 # Add Vercel URL if in production environment.
@@ -119,15 +121,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
-# Explicitly tell Django to look for drf-yasg static files.
-STATICFILES_DIRS = [
-    os.path.join(os.path.dirname(drf_yasg.__file__), 'static'),
-]
-
-# Use a storage that doesn't crash the app if a manifest entry is missing.
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
-
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
