@@ -28,7 +28,7 @@ class Carta(models.Model):
     treshold_fogo = models.IntegerField(default=0)
     treshold_terra = models.IntegerField(default=0)
     printing = models.CharField(max_length=100, choices=Printing.choices)
-    imagem = models.ImageField(upload_to='cartas/', blank=True, null=True)
+    link_imagem = models.URLField(max_length=500, blank=True, null=True)
 
     def __str__(self):
         return f"{self.nome} ({self.printing})"
