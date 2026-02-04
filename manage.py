@@ -2,16 +2,9 @@
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
-from pathlib import Path
 
 def main():
     """Run administrative tasks."""
-    # Add the parent directory of this file (the 'mysite' directory) to the Python path.
-    # This allows the local runtime to find the 'base' module.
-    # __file__ -> /path/to/your/project/mysite/manage.py
-    # .parent -> /path/to/your/project/mysite
-    sys.path.append(str(Path(__file__).resolve().parent))
-
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "base.settings")
     try:
         from django.core.management import execute_from_command_line

@@ -3,7 +3,7 @@ from datetime import timedelta
 from pathlib import Path
 import drf_yasg
 
-# BASE_DIR is the 'mysite' folder.
+# With the new folder structure, BASE_DIR is the project root.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -118,7 +118,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR.parent / "staticfiles"
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Explicitly tell Django to look for drf-yasg static files.
 STATICFILES_DIRS = [
