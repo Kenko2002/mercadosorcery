@@ -53,7 +53,7 @@ class Command(BaseCommand):
 
         # Process each image file
         for image_name in all_image_files:
-            match = re.match(r"^[a-z]{3}-([a-zA-Z0-9_]+)((?:-[a-z0-9_]+)*)\.png$", image_name)
+            match = re.match(r"^([a-z]{3})-([a-zA-Z0-9_]+)((?:-[a-z0-9_]+)*)\.png$", image_name)
             if not match:
                 self.stdout.write(self.style.WARNING(f'Ignorando arquivo com formato inesperado: {image_name}'))
                 continue
