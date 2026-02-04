@@ -6,15 +6,9 @@ from django.db.models import Count
 @admin.register(Carta)
 class CartaAdmin(admin.ModelAdmin):
     """Personaliza a admin de Carta para melhor visualização e filtro."""
-    list_display = ('nome', 'printing', 'raridade', 'tipo', 'imagem_display')
+    list_display = ('nome', 'printing', 'raridade', 'tipo')
     search_fields = ('nome', 'printing')
     list_filter = ('printing', 'raridade', 'tipo')
-
-    def imagem_display(self, obj):
-        if obj.imagem:
-            return format_html(f'<img src="{obj.imagem.url}" style="max-height: 100px;" />')
-        return "N/A"
-    imagem_display.short_description = 'Imagem'
 
 class PosseInline(admin.TabularInline):
     """Define a visualização inline das Posses dentro de uma Coleção."""
@@ -23,16 +17,9 @@ class PosseInline(admin.TabularInline):
     # substituindo um dropdown por um campo de busca.
     raw_id_fields = ('carta',)
     # Campos que aparecerão no formulário inline
-    fields = ('carta', 'estado_carta', 'status', 'preco_usd', 'imagem_display')
-    readonly_fields = ('imagem_display',)
+    fields = ('carta', 'estado_carta', 'status', 'preco_usd')
+    readonly_fields = ()
     extra = 0  # Não mostrar formulários extras em branco por padrão
-
-    # Método para mostrar a imagem da carta relacionada
-    def imagem_display(self, obj):
-        if obj.carta and obj.carta.imagem:
-            return format_html(f'<img src="{obj.carta.imagem.url}" style="max-height: 100px;" />')
-        return "N/A"
-    imagem_display.short_description = 'Imagem da Carta'
 
 @admin.register(Colecao)
 class ColecaoAdmin(admin.ModelAdmin):
