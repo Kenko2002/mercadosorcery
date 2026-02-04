@@ -1,27 +1,23 @@
 
-import requests
+import json
+import os
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from mercadosorcery.models import Carta
 
 class Command(BaseCommand):
-    help = 'Popula o banco de dados com cartas da API do Sorcery TCG'
+    help = 'Popula o banco de dados com cartas de um arquivo JSON local (carddata.json).'
 
     def handle(self, *args, **kwargs):
-        url = 'https://api.sorcerytcg.com/api/cards'
-        # Adicionar um cabeçalho User-Agent para simular um navegador
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
-        
-        self.stdout.write("Buscando dados da API do Sorcery TCG com User-Agent...")
+        json_file_path = os.path.join(settings.BASE_DIR, 'carddata.json')
+        self.stdout.write(f"Lendo dados do arquivo local: {json_file_path}")
         
         try:
-            # Realizar a requisição com o novo cabeçalho
-            response = requests.get(url, headers=headers)
-            response.raise_for_status()
-            cards_data = response.json()
-            self.stdout.write(f"Encontradas {len(cards_data)} cartas na API. Processando...")
+            with open(json_file_path, 'r', encoding='utf-8') as f:
+                cards_data = json.load(f)
+            
+            self.stdout.write(f"Encontradas {len(cards_data)} cartas no arquivo JSON. Processando...")
 
             card_creations = 0
             card_updates = 0
@@ -84,8 +80,9 @@ class Command(BaseCommand):
 
             self.stdout.write(self.style.SUCCESS(f'Processamento concluído. {card_creations} cartas adicionadas, {card_updates} cartas atualizadas.'))
 
-        except requests.exceptions.RequestException as e:
-            self.stdout.write(self.style.ERROR(f'Erro ao buscar dados da API: {e}'))
+        except FileNotFoundError:
+            self.stdout.write(self.style.ERROR(f'Arquivo JSON não encontrado em: {json_file_path}'))
+        except json.JSONDecodeError:
+            self.stdout.write(self.style.ERROR('Erro ao decodificar o arquivo JSON. Verifique se o formato é válido.'))
         except Exception as e:
             self.stdout.write(self.style.ERROR(f'Ocorreu um erro inesperado: {e}'))
-
