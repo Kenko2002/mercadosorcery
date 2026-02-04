@@ -9,10 +9,16 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         url = 'https://api.sorcerytcg.com/api/cards'
-        self.stdout.write("Buscando dados da API do Sorcery TCG...")
+        # Adicionar um cabeçalho User-Agent para simular um navegador
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        
+        self.stdout.write("Buscando dados da API do Sorcery TCG com User-Agent...")
         
         try:
-            response = requests.get(url)
+            # Realizar a requisição com o novo cabeçalho
+            response = requests.get(url, headers=headers)
             response.raise_for_status()
             cards_data = response.json()
             self.stdout.write(f"Encontradas {len(cards_data)} cartas na API. Processando...")
