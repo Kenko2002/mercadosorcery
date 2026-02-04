@@ -53,6 +53,7 @@ urlpatterns = [
     # --- ROTAS DA API ---
 
     # Rotas personalizadas
+    path('api/populate-cards/', mercadosorcery_views.PopulateCardsView.as_view(), name='populate-cards'),
     path('api/posses/adicionar/', mercadosorcery_views.AdicionarPosseView.as_view(), name='adicionar-posse'),
     path('api/colecoes/minha-colecao/', mercadosorcery_views.MinhaColecaoView.as_view(), name='minha-colecao'),
 

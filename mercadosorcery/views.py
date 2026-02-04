@@ -3,16 +3,37 @@ from django.db.models import Count
 from rest_framework import viewsets, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.pagination import PageNumberPagination
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from django.core.management import call_command
 
 from .models import Carta, Colecao, Posse, Lista
 from .serializers import (
     CartaSerializer, ColecaoSerializer, PosseSerializer, ListaSerializer,
     CriarPosseSerializer, MinhaColecaoSerializer
 )
+
+
+class PopulateCardsView(APIView):
+    """
+    Um endpoint para acionar o comando de popular o banco de dados com as cartas.
+    Acesso restrito a administradores.
+    """
+    permission_classes = [IsAdminUser]
+
+    @swagger_auto_schema(
+        operation_description="Aciona o script para popular o banco de dados com os dados das cartas do Scryfall.",
+        responses={200: "Comando executado com sucesso.", 500: "Ocorreu um erro ao executar o comando."}
+    )
+    def get(self, request):
+        try:
+            # Chama o comando de gerenciamento
+            call_command('populate_links')
+            return Response({"status": "O comando para popular o banco de dados foi executado com sucesso."}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": f"Ocorreu um erro ao executar o comando: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class AdicionarPosseView(APIView):
