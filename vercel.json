@@ -3,39 +3,25 @@
     {
       "src": "base/wsgi.py",
       "use": "@vercel/python",
-      "config": { "maxLambdaSize": "15mb", "runtime": "python3.12" }
+      "config": {
+        "maxLambdaSize": "15mb",
+        "runtime": "python3.12",
+        "build": "./build.sh"
+      }
+    },
+    {
+      "src": "staticfiles/**",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
-      "src": "/(.*)",
-      "dest": "base/wsgi.py"
-    }
-  ],
-  "build": {
-    "env": {
-      "DJANGO_SETTINGS_MODULE": "base.settings"
-    }
-  },
-  "crons": [],
-  "functions": {
-    "base/wsgi.py": {
-      "maxDuration": 30
-    }
-  },
-  "github": {
-    "enabled": true,
-    "autoAlias": true
-  },
-  "redirects": [],
-  "rewrites": [
-    {
-      "source": "/static/(.*)",
-      "destination": "/static/$1"
+      "src": "/static/(.*)",
+      "dest": "/staticfiles/$1"
     },
     {
-      "source": "/(.*)",
-      "destination": "/base/wsgi.py"
+      "src": "/(.*)",
+      "dest": "base/wsgi.py"
     }
   ]
 }
