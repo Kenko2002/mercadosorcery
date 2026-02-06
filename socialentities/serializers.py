@@ -8,7 +8,7 @@ class SocialEntitySerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = SocialEntity
-        fields = ('id', 'email', 'first_name', 'last_name', 'cpf', 'imagem', 'role')
+        fields = ("__all__")
         read_only_fields = ('id',)
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -19,7 +19,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SocialEntity
-        fields = ('email', 'password', 'first_name', 'last_name', 'cpf', 'imagem', 'role')
+        fields = ('email', 'password', 'first_name', 'last_name',  'role')
 
     def create(self, validated_data):
         # Usa o método create_user do nosso modelo para garantir que a senha seja hasheada
