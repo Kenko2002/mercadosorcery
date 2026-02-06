@@ -15,7 +15,8 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-^=6-_k)oh!n9-fpcd1qd0
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # Default to False if DEBUG is not set. Vercel will not set this, so it will be False in production.
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+#DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+DEBUG = True
 
 # --- ALLOWED_HOSTS & CSRF Configuration ---
 # This is crucial for production (when DEBUG=False).
