@@ -6,7 +6,7 @@ from django.dispatch import receiver
 # Obtém o modelo de usuário ativo, que é o nosso SocialEntity
 User = settings.AUTH_USER_MODEL
 
-# --- Modelo de Perfil (Sua arquitetura) ---
+# --- Modelo de Perfil (Sua arquitetura) --
 
 class Usuario(models.Model):
     class Role(models.TextChoices):
