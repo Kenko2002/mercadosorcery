@@ -9,5 +9,6 @@ criar funcionalidades:
     -pelo preço médio do site
 
 
-voltar os endpoints do mercadosorcery de base.urls para mercadosorcery.urls
-voltar com a abordagem de installed apps
+
+
+PRECISA DELETAR OS STORAGES DO VERCEL E CRIAR O BANCO DO ZERO
