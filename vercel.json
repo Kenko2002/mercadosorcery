@@ -6,7 +6,7 @@
       "config": {
         "maxLambdaSize": "15mb",
         "runtime": "python3.12",
-        "build": "python manage.py migrate && python manage.py collectstatic --noinput --clear"
+        "build": "./build.sh"
       }
     },
     {
