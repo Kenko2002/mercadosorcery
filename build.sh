@@ -1,8 +1,7 @@
 #!/bin/bash
 set -e
 
-# Activate the virtual environment to run Django commands
-source .venv/bin/activate
+
 
 echo "--- Applying database migrations ---"
 python manage.py migrate
