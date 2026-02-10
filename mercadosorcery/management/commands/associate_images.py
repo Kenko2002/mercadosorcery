@@ -15,7 +15,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # 1. CORREÇÃO: Apontar para a pasta de imagens dentro de staticfiles
-        image_folder_path = os.path.join(settings.BASE_DIR, 'staticfiles', 'imagens_comprimidas')
+        image_folder_path = os.path.join(settings.BASE_DIR, 'staticfiles')
         
         if not os.path.isdir(image_folder_path):
             self.stdout.write(self.style.ERROR(f'Diretório de imagens não encontrado: {image_folder_path}'))
