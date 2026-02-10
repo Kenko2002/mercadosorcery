@@ -1,4 +1,3 @@
-
 import os
 import re
 from django.core.management.base import BaseCommand
@@ -15,7 +14,8 @@ class Command(BaseCommand):
     help = 'Associa imagens de arquivos a cartas no banco de dados sem usar dependências externas de fuzzy matching.'
 
     def handle(self, *args, **options):
-        image_folder_path = os.path.join(settings.BASE_DIR, 'imagens_comprimidas')
+        # 1. CORREÇÃO: Apontar para a pasta de imagens dentro de staticfiles
+        image_folder_path = os.path.join(settings.BASE_DIR, 'staticfiles', 'imagens_comprimidas')
         
         if not os.path.isdir(image_folder_path):
             self.stdout.write(self.style.ERROR(f'Diretório de imagens não encontrado: {image_folder_path}'))
@@ -36,8 +36,6 @@ class Command(BaseCommand):
             'pro': ('Promotional', 'Promotional (foil)'),
         }
 
-        # Cache all relevant cards from the database, normalized
-        # This avoids querying the DB inside the loop
         cards_by_printing = {}
         all_printings = [p for sublist in printing_map.values() for p in sublist]
         all_cards = Carta.objects.filter(printing__in=all_printings)
@@ -51,7 +49,6 @@ class Command(BaseCommand):
 
         self.stdout.write(f"Mapeamento de {len(normalized_card_map)} nomes de cartas normalizados criado.")
 
-        # Process each image file
         for image_name in all_image_files:
             match = re.match(r"^([a-z]{3})-([a-zA-Z0-9_]+)((?:-[a-z0-9_]+)*)\.png$", image_name)
             if not match:
@@ -67,27 +64,24 @@ class Command(BaseCommand):
 
             normalized_name_from_file = normalize_name(card_name_part)
             
-            # Find a match in our pre-built map
             matched_cards = normalized_card_map.get(normalized_name_from_file)
 
             if matched_cards:
-                # We found a match. Get the canonical name from the first matched card.
                 canonical_name = matched_cards[0].nome
                 
-                # Find all versions of this card that should be updated
-                # (i.e., those that share the same canonical name and are in the correct printings)
-                absolute_image_path = os.path.join(image_folder_path, image_name)
+                # 2. CORREÇÃO: Salvar o caminho relativo para a imagem
+                relative_image_path = os.path.join('imagens_comprimidas', image_name)
+                
                 updated_count = Carta.objects.filter(
                     nome=canonical_name,
                     printing__in=possible_printings
-                ).update(imagem=absolute_image_path)
+                ).update(imagem=relative_image_path)
 
                 if updated_count > 0:
                     self.stdout.write(self.style.SUCCESS(
                         f'[OK] Imagem "{image_name}" associada a {updated_count} versão(ões) de "{canonical_name}".'
                     ))
                 else:
-                    # This case should be rare, but good to log
                     self.stdout.write(self.style.NOTICE(
                         f'[AVISO] Uma correspondência foi encontrada para "{image_name}", mas nenhuma carta foi atualizada.'
                     ))

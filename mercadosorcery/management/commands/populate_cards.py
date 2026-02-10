@@ -1,4 +1,3 @@
-
 import json
 import os
 from django.conf import settings
@@ -53,14 +52,16 @@ class Command(BaseCommand):
                                 continue
                                 
                             cost = metadata.get('cost')
-                            
+                            poder = metadata.get('attack')
+                            defesa = metadata.get('defence')
+
                             defaults = {
                                 'raridade': metadata.get('rarity') or '',
                                 'tipo': metadata.get('type') or '',
                                 'efeito': metadata.get('rulesText', ''),
-                                'poder': metadata.get('attack'),
-                                'defesa': metadata.get('defence'),
-                                'custo_mana': cost if cost is not None else 0,
+                                'poder': str(poder) if poder is not None else '0',
+                                'defesa': str(defesa) if defesa is not None else '0',
+                                'custo_mana': str(cost) if cost is not None else '',
                                 'treshold_agua': metadata.get('thresholds', {}).get('water', 0),
                                 'treshold_vento': metadata.get('thresholds', {}).get('air', 0),
                                 'treshold_fogo': metadata.get('thresholds', {}).get('fire', 0),
@@ -75,8 +76,10 @@ class Command(BaseCommand):
 
                             if created:
                                 card_creations += 1
+                                self.stdout.write(self.style.SUCCESS(f'[CRIADA] Carta: {obj.nome}, Edição: {obj.printing}'))
                             else:
                                 card_updates += 1
+                                self.stdout.write(f'[ATUALIZADA] Carta: {obj.nome}, Edição: {obj.printing}')
 
             self.stdout.write(self.style.SUCCESS(f'Processamento concluído. {card_creations} cartas adicionadas, {card_updates} cartas atualizadas.'))
 
