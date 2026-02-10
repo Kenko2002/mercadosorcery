@@ -10,7 +10,7 @@ class Command(BaseCommand):
     help = 'Popula o banco de dados com cartas de um arquivo JSON local (carddata.json).'
 
     def handle(self, *args, **kwargs):
-        json_file_path = os.path.join(settings.BASE_DIR, 'carddata.json')
+        json_file_path = os.path.join(settings.BASE_DIR, 'staticfiles', 'carddata.json')
         self.stdout.write(f"Lendo dados do arquivo local: {json_file_path}")
         
         try:
